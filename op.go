@@ -45,9 +45,12 @@ func fetchOpItemReal(ref string) (map[string]string, error) {
 
 // parseOpReference splits "op://<vault>/<item>[/...]" into vault and item.
 func parseOpReference(ref string) (vault, item string, err error) {
-	trimmed := strings.TrimPrefix(ref, "op://")
+	rest, ok := strings.CutPrefix(ref, "op://")
+	if !ok {
+		return "", "", fmt.Errorf("credentials must start with op://, got %q", ref)
+	}
 	var parts []string
-	for _, p := range strings.Split(trimmed, "/") {
+	for _, p := range strings.Split(rest, "/") {
 		if p != "" {
 			parts = append(parts, p)
 		}

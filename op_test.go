@@ -64,4 +64,7 @@ func TestParseOpReference(t *testing.T) {
 	if _, _, err := parseOpReference("op://Employee"); err == nil {
 		t.Error("expected error for reference without item")
 	}
+	if _, _, err := parseOpReference("https://example.com/x/y"); err == nil {
+		t.Error("expected error for non-op:// reference")
+	}
 }
