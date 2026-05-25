@@ -81,11 +81,12 @@ func resolveEntry(cfg map[string]Entry, host, owner, repo string) (Entry, bool) 
 	return merged, true
 }
 
-// parseOrigin normalizes an origin string to (host, owner, repo). It accepts the
-// documented "<host>/<owner>/<repo>" form and tolerates a leading scheme, an
-// scp-like "git@host:owner/repo", and a trailing ".git" or "/".
-func parseOrigin(origin string) (host, owner, repo string, err error) {
-	s := strings.TrimSpace(origin)
+// parseRepo normalizes a repo argument to (host, owner, repo). It accepts the
+// gh-CLI-style "[<host>/]<owner>/<repo>", defaulting the host to github.com when
+// omitted, and tolerates a leading scheme, an scp-like "git@host:owner/repo",
+// and a trailing ".git" or "/".
+func parseRepo(arg string) (host, owner, repo string, err error) {
+	s := strings.TrimSpace(arg)
 	hadAt := strings.Contains(s, "@")
 	for _, scheme := range []string{"https://", "http://", "ssh://", "git://"} {
 		s = strings.TrimPrefix(s, scheme)
@@ -110,8 +111,12 @@ func parseOrigin(origin string) (host, owner, repo string, err error) {
 			parts = append(parts, p)
 		}
 	}
-	if len(parts) < 3 {
-		return "", "", "", fmt.Errorf("origin must be <host>/<owner>/<repo>, got %q", origin)
+	switch {
+	case len(parts) >= 3:
+		return parts[0], parts[1], parts[2], nil
+	case len(parts) == 2:
+		return "github.com", parts[0], parts[1], nil // host omitted
+	default:
+		return "", "", "", fmt.Errorf("repo must be [<host>/]<owner>/<repo>, got %q", arg)
 	}
-	return parts[0], parts[1], parts[2], nil
 }

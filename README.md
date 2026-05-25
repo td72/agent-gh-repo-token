@@ -11,7 +11,7 @@
 の installation token を mint して渡すことで、漏洩リスクを最小化します。
 
 ```bash
-agent-gh-repo-token --origin github.com/td72/foo
+agent-gh-repo-token --repo td72/foo
 # → ghs_xxxx... (1時間有効、td72/foo の指定 permission だけ)
 ```
 
@@ -134,12 +134,19 @@ permissions = { contents = "read", pull_requests = "write" }
 ## 使い方
 
 ```bash
-agent-gh-repo-token --origin github.com/td72/foo
+agent-gh-repo-token --repo td72/foo
 # → ghs_xxxx... (stdout に token のみ)
 
+# host は省略すると github.com。GHES なら明示する
+agent-gh-repo-token --repo github.com/td72/foo
+agent-gh-repo-token --repo ghe.corp/team/foo
+
 # 別 config を使う
-agent-gh-repo-token --origin github.com/td72/foo --config /path/to/repos.toml
+agent-gh-repo-token --repo td72/foo --config /path/to/repos.toml
 ```
+
+`--repo` は `gh` CLI と同じ `[<host>/]<owner>/<repo>` 形式。host を省略すると
+`github.com` を補完します。
 
 ### 終了コードの設計
 
@@ -147,7 +154,7 @@ agent-gh-repo-token --origin github.com/td72/foo --config /path/to/repos.toml
 |---|---|
 | 0 | token を stdout に出力 |
 | 2 | config ファイルが存在しない |
-| 3 | origin に該当する entry が無い |
+| 3 | repo に該当する entry が無い |
 | 4 | 1Password の item 取得に失敗 |
 | 5 | 必須フィールド (app_id / installation_id / private_key) が欠落 |
 | 6 | JWT 生成または GitHub API 呼び出しに失敗 |
@@ -157,7 +164,8 @@ GitHub 認証なしで続行する設計を想定。
 
 ## Config の解決規則
 
-`agent-gh-repo-token --origin github.com/td72/foo` を実行した場合:
+`agent-gh-repo-token --repo github.com/td72/foo` を実行した場合 (host 省略時は
+`github.com` 補完後に照合):
 
 ```
 1. ["github.com/td72/foo"]   を引く  (repo-level)
@@ -190,9 +198,10 @@ permissions     = { contents = "write" }
 ### bash で sandbox 環境変数 / secret として渡す
 
 ```bash
-origin=$(git remote get-url origin | sed -E 's#.*github.com[:/]([^/]+/[^/.]+).*#github.com/\1#')
+# origin リモートから owner/repo を取り出す (host は --repo 側で github.com 補完)
+repo=$(git remote get-url origin | sed -E 's#.*github.com[:/]([^/]+/[^/.]+).*#\1#')
 
-if token=$(agent-gh-repo-token --origin "$origin" 2>/dev/null); then
+if token=$(agent-gh-repo-token --repo "$repo" 2>/dev/null); then
   # Docker Sandboxes に secret として渡す
   echo "$token" | sbx secret set "$sandbox_name" github
 fi
@@ -201,7 +210,7 @@ fi
 ### Docker run の env として渡す
 
 ```bash
-token=$(agent-gh-repo-token --origin "$origin")
+token=$(agent-gh-repo-token --repo "$repo")
 docker run --rm -e GH_TOKEN="$token" my-coding-agent-image
 ```
 
@@ -213,7 +222,7 @@ wt-worker plugin が標準で対応 (PATH に `agent-gh-repo-token` があれば
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ agent-gh-repo-token --origin github.com/td72/foo         │
+│ agent-gh-repo-token --repo github.com/td72/foo           │
 │   │                                                      │
 │   ├─ 1. ~/.config/agent-gh-repo-token/repos.toml を読む  │
 │   │     repo > org でマージ                              │

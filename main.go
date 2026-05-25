@@ -21,7 +21,7 @@ const (
 	exitOK           = 0
 	exitUsage        = 1 // argument / usage error
 	exitNoConfig     = 2 // config file missing or unreadable
-	exitNoEntry      = 3 // no config entry matches the origin
+	exitNoEntry      = 3 // no config entry matches the repo
 	exitOpFailed     = 4 // fetching the 1Password item failed
 	exitMissingField = 5 // app_id / installation_id / private_key missing
 	exitAPIFailed    = 6 // JWT generation or GitHub API call failed
@@ -40,11 +40,11 @@ func main() {
 func run(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("agent-gh-repo-token", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	origin := fs.String("origin", "", "target repository as <host>/<owner>/<repo>")
+	repoArg := fs.String("repo", "", "target repository as [<host>/]<owner>/<repo> (host defaults to github.com)")
 	configPath := fs.String("config", "", "path to repos.toml (default: ~/.config/agent-gh-repo-token/repos.toml)")
 	showVersion := fs.Bool("version", false, "print version and exit")
 	fs.Usage = func() {
-		fmt.Fprintln(stderr, "usage: agent-gh-repo-token --origin <host>/<owner>/<repo> [--config path]")
+		fmt.Fprintln(stderr, "usage: agent-gh-repo-token --repo [<host>/]<owner>/<repo> [--config path]")
 		fmt.Fprintln(stderr)
 		fs.PrintDefaults()
 	}
@@ -58,8 +58,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stdout, version)
 		return exitOK
 	}
-	if *origin == "" {
-		fmt.Fprintln(stderr, "error: --origin is required")
+	if *repoArg == "" {
+		fmt.Fprintln(stderr, "error: --repo is required")
 		fs.Usage()
 		return exitUsage
 	}
@@ -78,7 +78,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return exitNoConfig
 	}
 
-	host, owner, repo, err := parseOrigin(*origin)
+	host, owner, repo, err := parseRepo(*repoArg)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitNoEntry

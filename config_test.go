@@ -6,28 +6,32 @@ import (
 	"testing"
 )
 
-func TestParseOrigin(t *testing.T) {
+func TestParseRepo(t *testing.T) {
 	cases := map[string][3]string{
 		"github.com/td72/foo":             {"github.com", "td72", "foo"},
+		"td72/foo":                        {"github.com", "td72", "foo"}, // host omitted -> github.com
+		"ghe.corp/team/foo":               {"ghe.corp", "team", "foo"},   // GHES host
 		"https://github.com/td72/foo.git": {"github.com", "td72", "foo"},
 		"git@github.com:td72/foo.git":     {"github.com", "td72", "foo"},
 		"ssh://git@github.com/td72/foo":   {"github.com", "td72", "foo"},
 		"github.com/td72/foo/":            {"github.com", "td72", "foo"},
 	}
 	for in, want := range cases {
-		h, o, r, err := parseOrigin(in)
+		h, o, r, err := parseRepo(in)
 		if err != nil {
-			t.Fatalf("parseOrigin(%q) error: %v", in, err)
+			t.Fatalf("parseRepo(%q) error: %v", in, err)
 		}
 		if h != want[0] || o != want[1] || r != want[2] {
-			t.Errorf("parseOrigin(%q) = %q/%q/%q, want %v", in, h, o, r, want)
+			t.Errorf("parseRepo(%q) = %q/%q/%q, want %v", in, h, o, r, want)
 		}
 	}
 }
 
-func TestParseOriginInvalid(t *testing.T) {
-	if _, _, _, err := parseOrigin("github.com/td72"); err == nil {
-		t.Error("expected error for too-short origin")
+func TestParseRepoInvalid(t *testing.T) {
+	for _, in := range []string{"foo", ""} {
+		if _, _, _, err := parseRepo(in); err == nil {
+			t.Errorf("parseRepo(%q): expected error", in)
+		}
 	}
 }
 

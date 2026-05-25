@@ -56,7 +56,7 @@ permissions = { contents = "write", pull_requests = "write" }
 	}
 
 	var out, errOut bytes.Buffer
-	code := run([]string{"--origin", "github.com/td72/foo", "--config", cfg}, &out, &errOut)
+	code := run([]string{"--repo", "github.com/td72/foo", "--config", cfg}, &out, &errOut)
 	if code != exitOK {
 		t.Fatalf("exit = %d, stderr=%s", code, errOut.String())
 	}
@@ -73,7 +73,7 @@ permissions = { contents = "write", pull_requests = "write" }
 
 func TestRunNoConfig(t *testing.T) {
 	var out, errOut bytes.Buffer
-	code := run([]string{"--origin", "github.com/td72/foo", "--config", "/no/such/repos.toml"}, &out, &errOut)
+	code := run([]string{"--repo", "github.com/td72/foo", "--config", "/no/such/repos.toml"}, &out, &errOut)
 	if code != exitNoConfig {
 		t.Errorf("exit = %d, want %d", code, exitNoConfig)
 	}
@@ -84,7 +84,7 @@ func TestRunNoEntry(t *testing.T) {
 credentials = "op://x/y"
 `)
 	var out, errOut bytes.Buffer
-	code := run([]string{"--origin", "github.com/td72/foo", "--config", cfg}, &out, &errOut)
+	code := run([]string{"--repo", "github.com/td72/foo", "--config", cfg}, &out, &errOut)
 	if code != exitNoEntry {
 		t.Errorf("exit = %d, want %d", code, exitNoEntry)
 	}
@@ -101,7 +101,7 @@ credentials = "op://Personal/x"
 	}
 
 	var out, errOut bytes.Buffer
-	code := run([]string{"--origin", "github.com/td72/foo", "--config", cfg}, &out, &errOut)
+	code := run([]string{"--repo", "github.com/td72/foo", "--config", cfg}, &out, &errOut)
 	if code != exitMissingField {
 		t.Errorf("exit = %d, want %d", code, exitMissingField)
 	}
@@ -118,7 +118,7 @@ credentials = "op://Personal/x"
 	}
 
 	var out, errOut bytes.Buffer
-	code := run([]string{"--origin", "github.com/td72/foo", "--config", cfg}, &out, &errOut)
+	code := run([]string{"--repo", "github.com/td72/foo", "--config", cfg}, &out, &errOut)
 	if code != exitOpFailed {
 		t.Errorf("exit = %d, want %d", code, exitOpFailed)
 	}
