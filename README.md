@@ -107,15 +107,20 @@ go install github.com/td72/agent-gh-repo-token@latest
 
 ### 3. 1Password item に保存
 
-App ごとに 1 つ item を作り、以下のフィールドを保存:
+App ごとに 1 つ item を作り、`app_id` / `installation_id` / `private_key` を保存します
+(`private_key` は `.pem` の中身 = `-----BEGIN ...` から `-----END ...` まで)。private key
+は**改行を含む PEM** なので保存方法に注意。方法は2通り:
 
-| Field | Value |
-|---|---|
-| `app_id` | App ID (例: `1234567`) |
-| `installation_id` | Installation ID (例: `78901234`) |
-| `private_key` | `.pem` ファイルの中身 (`-----BEGIN ...` から `-----END ...` まで) |
+**推奨: SSH Key アイテム** — 鍵を multiline でネイティブに扱うため改行が壊れません。
 
-CLI で作るなら:
+1. **SSH Key** カテゴリの item を作り `.pem` をインポート (GitHub App の鍵は RSA なので可)
+2. カスタムフィールド `app_id` / `installation_id` を追加
+
+ツールは SSHKEY フィールドを検出して `op read` で取得します。1Password は SSH Key
+アイテムでも元の PEM (`-----BEGIN RSA PRIVATE KEY-----`, PKCS#1) を返すのでそのまま使えます。
+
+**別解: login item のテキストフィールド** — UI で password フィールドに貼ると改行が
+潰れるので、必ず CLI で `.pem` から流し込みます:
 
 ```bash
 op item create \
@@ -126,6 +131,8 @@ op item create \
   installation_id="78901234" \
   private_key="$(cat ~/Downloads/agent-gh-repo-token.YYYY-MM-DD.private-key.pem)"
 ```
+
+どちらの場合も item を `op://<vault>/<item>` として次の `credentials` から参照します。
 
 ### 4. `~/.config/agent-gh-repo-token/repos.toml` を書く
 
