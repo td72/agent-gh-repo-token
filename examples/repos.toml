@@ -27,6 +27,8 @@
 #     pull_requests, issues, actions, checks, statuses, security_events ("read")
 
 # ─── org/user-level defaults (most repos in this owner reuse these) ───
+# Vault name depends on your 1Password plan: "Personal" on individual
+# (Individual/Families) accounts, "Employee" on 1Password Business. Use yours.
 ["github.com/td72"]
 credentials = "op://Personal/agent-gh-repo-token"
 permissions = { contents = "write", pull_requests = "write" }

@@ -134,6 +134,10 @@ op item create \
 
 どちらの場合も item を `op://<vault>/<item>` として次の `credentials` から参照します。
 
+> vault 名はアカウント種別で変わります。個人 (Individual / Families) は既定で
+> `Personal`、**1Password Business は `Employee`**。`--vault` と `op://<vault>/...`
+> は自分の vault 名に合わせてください (以下の例は `Personal`)。
+
 ### 4. `~/.config/agent-gh-repo-token/repos.toml` を書く
 
 ```toml
