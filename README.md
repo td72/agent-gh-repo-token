@@ -47,7 +47,6 @@ curl -fsSL https://raw.githubusercontent.com/td72/agent-gh-repo-token/main/scrip
 | OS / arch | asset 名 |
 |---|---|
 | macOS (Apple Silicon) | `agent-gh-repo-token-darwin-arm64` |
-| macOS (Intel) | `agent-gh-repo-token-darwin-amd64` |
 | Linux (x86_64) | `agent-gh-repo-token-linux-amd64` |
 | Linux (arm64) | `agent-gh-repo-token-linux-arm64` |
 
@@ -129,7 +128,8 @@ permissions = { contents = "write", pull_requests = "write" }
 permissions = { contents = "read", pull_requests = "write" }
 ```
 
-詳細は [`examples/repos.toml`](./examples/repos.toml) 参照。
+config のキーは `<host>/<owner>[/<repo>]` 形式 (host 必須)。詳細は
+[`examples/repos.toml`](./examples/repos.toml) 参照。
 
 ## 使い方
 

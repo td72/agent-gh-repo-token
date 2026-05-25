@@ -1,6 +1,6 @@
 # Copy this file to ~/.config/agent-gh-repo-token/repos.toml.
 #
-# When `agent-gh-repo-token --origin <host>/<owner>/<repo>` is invoked, it:
+# When `agent-gh-repo-token --repo [<host>/]<owner>/<repo>` is invoked, it:
 #   1. Looks up the matching entry — repo-level wins, org/user-level is the
 #      fallback (shallow-merged per top-level key)
 #   2. Fetches the referenced 1Password item to get the App's
