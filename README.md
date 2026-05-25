@@ -187,6 +187,7 @@ agent-gh-repo-token --repo td72/foo --config /path/to/repos.toml
 | Code | 意味 |
 |---|---|
 | 0 | token を stdout に出力 |
+| 1 | 引数 / usage エラー (`--repo` の不正・未指定など) |
 | 2 | config ファイルが存在しない |
 | 3 | repo に該当する entry が無い |
 | 4 | 1Password の item 取得に失敗 |

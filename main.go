@@ -88,7 +88,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	host, owner, repo, err := parseRepo(*repoArg)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
-		return exitNoEntry
+		return exitUsage
 	}
 	entry, ok := resolveEntry(cfg, host, owner, repo)
 	if !ok {

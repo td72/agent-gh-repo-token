@@ -71,6 +71,17 @@ permissions = { contents = "write", pull_requests = "write" }
 	}
 }
 
+func TestRunInvalidRepoArg(t *testing.T) {
+	cfg := writeConfig(t, `["github.com/td72"]
+credentials = "op://Personal/x"
+`)
+	var out, errOut bytes.Buffer
+	code := run([]string{"--repo", "foo", "--config", cfg}, &out, &errOut)
+	if code != exitUsage {
+		t.Errorf("exit = %d, want %d (usage)", code, exitUsage)
+	}
+}
+
 func TestRunNoConfig(t *testing.T) {
 	var out, errOut bytes.Buffer
 	code := run([]string{"--repo", "github.com/td72/foo", "--config", "/no/such/repos.toml"}, &out, &errOut)
