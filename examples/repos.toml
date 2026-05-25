@@ -18,6 +18,13 @@
 #     fields named: app_id, installation_id, private_key
 #
 # Key format: "<host>/<owner>" for org/user-level, add "/<repo>" for repo-level.
+#
+# permissions:
+#   - Omitted  -> the token carries ALL of the App's granted permissions.
+#   - Present  -> narrowed to what you list, but only within what the App itself
+#                 was granted (requesting more is rejected when minting).
+#   Handy read-only scopes for a coding agent, beyond `contents`:
+#     pull_requests, issues, actions, checks, statuses, security_events ("read")
 
 # ─── org/user-level defaults (most repos in this owner reuse these) ───
 ["github.com/td72"]
@@ -25,6 +32,6 @@ credentials = "op://Personal/agent-gh-repo-token"
 permissions = { contents = "write", pull_requests = "write" }
 
 # ─── repo-level overrides (only write keys that differ from the owner entry) ───
-# Example: read-only worker for a repo that should never be pushed to.
+# Example: a read-only worker (analyzer / reviewer) for a sensitive repo.
 ["github.com/td72/secret-stuff"]
-permissions = { contents = "read", pull_requests = "write" }
+permissions = { contents = "read", pull_requests = "read", issues = "read" }

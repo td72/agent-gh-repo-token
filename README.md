@@ -80,8 +80,12 @@ go install github.com/td72/agent-gh-repo-token@latest
 | Homepage URL | リポジトリ URL でOK |
 | Webhook | **Active のチェックを外す** |
 | Identifying and authorizing users (OAuth 系) | **触らない** — Callback URL は空、各チェックも全てオフ |
-| Repository permissions | Contents: Read and write / Pull requests: Read and write |
+| Repository permissions | Contents / Pull requests を Read and write (worker が使う分だけ) |
 | Where can this GitHub App be installed? | Only on this account (個人用途なら) |
+
+ここで付与した Repository permissions が **トークンの上限**です。config の `permissions`
+はこの範囲内でしか絞れない (超えると mint 時に弾かれる) ので、read-only worker に
+`issues` / `actions` 等の `read` を渡したいなら、App 側にもその権限を足しておきます。
 
 > このツールは App 自身として動く **installation token** だけを使い、ユーザーの
 > OAuth (user-to-server) トークンは使いません。そのため OAuth 系の設定は不要です。
@@ -131,12 +135,20 @@ op item create \
 credentials = "op://Personal/agent-gh-repo-token"
 permissions = { contents = "write", pull_requests = "write" }
 
-# repo 単位の上書き (必要なものだけ書く)
+# repo 単位の上書き (必要なものだけ書く): read-only な worker
 ["github.com/td72/secret-stuff"]
-permissions = { contents = "read", pull_requests = "write" }
+permissions = { contents = "read", pull_requests = "read", issues = "read" }
 ```
 
-config のキーは `<host>/<owner>[/<repo>]` 形式 (host 必須)。詳細は
+`permissions` はあくまで **例**です。挙動は:
+
+- **書かない** → App に付与された全権限のトークンが出る
+- **書く** → そこへ絞り込む。ただし**絞れるのは App 自身に付与した権限の範囲内だけ**
+  (App が持たない権限を要求すると GitHub が弾く)
+
+read-only 用途なら `contents` に加え `pull_requests` / `issues` / `actions` /
+`checks` / `statuses` / `security_events` の `read` も有用 (使う分だけ App 側にも
+付与しておく)。config のキーは `<host>/<owner>[/<repo>]` 形式 (host 必須)。詳細は
 [`examples/repos.toml`](./examples/repos.toml) 参照。
 
 ## 使い方
