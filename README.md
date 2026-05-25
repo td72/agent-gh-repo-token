@@ -79,8 +79,16 @@ go install github.com/td72/agent-gh-repo-token@latest
 | GitHub App name | `agent-gh-repo-token` 等 (グローバル一意) |
 | Homepage URL | リポジトリ URL でOK |
 | Webhook | **Active のチェックを外す** |
+| Identifying and authorizing users (OAuth 系) | **触らない** — Callback URL は空、各チェックも全てオフ |
 | Repository permissions | Contents: Read and write / Pull requests: Read and write |
 | Where can this GitHub App be installed? | Only on this account (個人用途なら) |
+
+> このツールは App 自身として動く **installation token** だけを使い、ユーザーの
+> OAuth (user-to-server) トークンは使いません。そのため OAuth 系の設定は不要です。
+>
+> mint 時に repo・permission を最小化できるのは installation token だけで、
+> user-to-server token は「ユーザーの権限 ∩ App install 範囲」までしか絞れません
+> (= `gh auth login` 相当)。本ツールが前者を使うのはこの粒度のためです。
 
 作成後:
 1. **App ID** をメモ (6〜7桁の整数)
