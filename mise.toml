@@ -1,0 +1,36 @@
+[tools]
+go = "1.26"
+
+[env]
+CGO_ENABLED = "0"
+
+[tasks.build]
+description = "Build the binary into ./agent-gh-repo-token"
+run = "go build -ldflags \"-s -w -X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)\" -o agent-gh-repo-token ."
+
+[tasks.test]
+description = "Run tests"
+run = "go test ./..."
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.dist]
+description = "Cross-compile release binaries into ./dist"
+run = '''
+set -eu
+mkdir -p dist
+version="${VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo dev)}"
+for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+  goos="${target%/*}"
+  goarch="${target#*/}"
+  ext=""
+  [ "$goos" = windows ] && ext=".exe"
+  out="dist/agent-gh-repo-token-${goos}-${goarch}${ext}"
+  echo "building $out"
+  GOOS="$goos" GOARCH="$goarch" CGO_ENABLED=0 \
+    go build -ldflags "-s -w -X main.version=${version}" -o "$out" .
+done
+(cd dist && shasum -a 256 agent-gh-repo-token-* > checksums.txt)
+'''

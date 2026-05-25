@@ -1,0 +1,10 @@
+# build artifacts
+/agent-gh-repo-token
+/dist/
+
+# secrets that may land here during setup
+*.pem
+
+# mise (committed: mise.toml, mise.lock)
+mise.local.toml
+.mise.local.toml
