@@ -73,6 +73,20 @@ func TestResolveEntryNone(t *testing.T) {
 	}
 }
 
+func TestLoadConfigRejectsFloat(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "repos.toml")
+	content := `["github.com/td72"]
+credentials = "op://Personal/x"
+installation_id = 123.0
+`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := loadConfig(path); err == nil {
+		t.Error("expected error for float installation_id, want string or integer only")
+	}
+}
+
 func TestLoadConfigIntInstallationID(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "repos.toml")
 	content := `["github.com/td72"]

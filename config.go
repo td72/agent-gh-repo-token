@@ -18,9 +18,8 @@ func (v *tomlValue) UnmarshalTOML(data any) error {
 		*v = tomlValue(x)
 	case int64:
 		*v = tomlValue(strconv.FormatInt(x, 10))
-	case float64:
-		*v = tomlValue(strconv.FormatInt(int64(x), 10))
 	default:
+		// Reject floats (e.g. 123.0, 1e6) rather than silently truncating an ID.
 		return fmt.Errorf("expected string or integer, got %T", data)
 	}
 	return nil
