@@ -73,7 +73,10 @@ func mintTokenReal(ctx context.Context, host, installationID, jwtToken, repo str
 	}
 	defer resp.Body.Close()
 
-	data, _ := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("read response body: %w", err)
+	}
 	if resp.StatusCode/100 != 2 {
 		return "", fmt.Errorf("GitHub API %d: %s", resp.StatusCode, strings.TrimSpace(string(data)))
 	}
