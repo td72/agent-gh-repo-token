@@ -151,11 +151,14 @@ permissions = { contents = "write", pull_requests = "write" }
 permissions = { contents = "read", pull_requests = "read", issues = "read" }
 ```
 
-`permissions` はあくまで **例**です。挙動は:
+`permissions` はあくまで **例**です。挙動:
 
-- **書かない** → App に付与された全権限のトークンが出る
-- **書く** → そこへ絞り込む。ただし**絞れるのは App 自身に付与した権限の範囲内だけ**
-  (App が持たない権限を要求すると GitHub が弾く)
+- **書かない** → App に付与された全権限のトークンが出る (全部欲しいなら列挙しない)
+- **書く** → 列挙したものだけに絞る (**whitelist**: 書かない権限は App が持っていても
+  落ちる)。ただし絞れるのは App 自身に付与した権限の範囲内だけ (超えると mint 時に 422)
+- マージは top-level キー単位の置き換え。repo-level が `permissions` を**持たなければ
+  org-level を継承**し、持てば org を**丸ごと上書き**する (deep merge ではない)
+- 特定 repo だけ「App 全権」にしたいときは**空テーブル**で上書き: `permissions = {}`
 
 read-only 用途なら `contents` に加え `pull_requests` / `issues` / `actions` /
 `checks` / `statuses` / `security_events` の `read` も有用 (使う分だけ App 側にも

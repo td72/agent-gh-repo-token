@@ -19,10 +19,15 @@
 #
 # Key format: "<host>/<owner>" for org/user-level, add "/<repo>" for repo-level.
 #
-# permissions:
+# permissions (a whitelist):
 #   - Omitted  -> the token carries ALL of the App's granted permissions.
-#   - Present  -> narrowed to what you list, but only within what the App itself
-#                 was granted (requesting more is rejected when minting).
+#   - Present  -> narrowed to exactly what you list; anything not listed is
+#                 dropped even if the App has it. You can only list permissions
+#                 the App was granted (requesting more is rejected when minting).
+#   - Merge is per top-level key: a repo-level block WITHOUT `permissions`
+#     inherits the owner-level value; WITH it, it fully replaces (no deep merge).
+#   - To give one repo the App's full permissions, override with an empty table:
+#         permissions = {}
 #   Handy read-only scopes for a coding agent, beyond `contents`:
 #     pull_requests, issues, actions, checks, statuses, security_events ("read")
 
