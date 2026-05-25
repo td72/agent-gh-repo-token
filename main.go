@@ -68,8 +68,15 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if path == "" {
 		path = defaultConfigPath()
 	}
-	if st, err := os.Stat(path); err != nil || st.IsDir() {
+	switch st, statErr := os.Stat(path); {
+	case statErr == nil && st.IsDir():
+		fmt.Fprintf(stderr, "config path is a directory: %s\n", path)
+		return exitNoConfig
+	case os.IsNotExist(statErr):
 		fmt.Fprintf(stderr, "config not found: %s\n", path)
+		return exitNoConfig
+	case statErr != nil:
+		fmt.Fprintf(stderr, "cannot access config %s: %v\n", path, statErr)
 		return exitNoConfig
 	}
 	cfg, err := loadConfig(path)
