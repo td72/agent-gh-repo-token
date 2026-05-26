@@ -46,13 +46,13 @@ func main() {
 func run(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("agent-gh-repo-token", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	repoArg := fs.String("repo", "", "target repository as [<host>/]<owner>/<repo> (host defaults to github.com)")
+	repoArg := fs.String("repo", "", "target repository as [<host>/]<owner>/<repo> (default: current git origin)")
 	configPath := fs.String("config", "", "path to repos.toml (default: ~/.config/agent-gh-repo-token/repos.toml)")
 	doInit := fs.Bool("init", false, "write a starter repos.toml to the config path and exit")
 	showVersion := fs.Bool("version", false, "print version and exit")
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, "usage:")
-		fmt.Fprintln(stderr, "  agent-gh-repo-token --repo [<host>/]<owner>/<repo> [--config path]")
+		fmt.Fprintln(stderr, "  agent-gh-repo-token [--repo [<host>/]<owner>/<repo>] [--config path]")
 		fmt.Fprintln(stderr, "  agent-gh-repo-token --init [--config path]")
 		fmt.Fprintln(stderr)
 		fs.PrintDefaults()
@@ -76,10 +76,27 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if *doInit {
 		return runInit(path, stderr)
 	}
-	if *repoArg == "" {
-		fmt.Fprintln(stderr, "error: --repo is required")
-		fs.Usage()
+	// --repo defaults to the current directory's git `origin` remote.
+	repoSpec := *repoArg
+	fromGit := false
+	if repoSpec == "" {
+		origin, gerr := gitOriginURL()
+		if gerr != nil {
+			fmt.Fprintf(stderr, "error: --repo not given and could not detect it from git (%v)\n", gerr)
+			fs.Usage()
+			return exitUsage
+		}
+		repoSpec = origin
+		fromGit = true
+	}
+
+	host, owner, repo, err := parseRepo(repoSpec)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
 		return exitUsage
+	}
+	if fromGit {
+		fmt.Fprintf(stderr, "using repo %s/%s/%s (from git origin)\n", host, owner, repo)
 	}
 
 	switch st, statErr := os.Stat(path); {
@@ -97,12 +114,6 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		fmt.Fprintf(stderr, "failed to read config %s: %v\n", path, err)
 		return exitNoConfig
-	}
-
-	host, owner, repo, err := parseRepo(*repoArg)
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-		return exitUsage
 	}
 	entry, ok := resolveEntry(cfg, host, owner, repo)
 	if !ok {
