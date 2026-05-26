@@ -71,6 +71,25 @@ permissions = { contents = "write", pull_requests = "write" }
 	}
 }
 
+func TestRunInit(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "sub", "repos.toml")
+	var out, errOut bytes.Buffer
+	if code := run([]string{"--init", "--config", path}, &out, &errOut); code != exitOK {
+		t.Fatalf("exit = %d, stderr=%s", code, errOut.String())
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("config not written: %v", err)
+	}
+	if !strings.Contains(string(data), "credentials") {
+		t.Errorf("written config missing expected template content")
+	}
+	// A second --init must refuse to overwrite.
+	if code := run([]string{"--init", "--config", path}, &out, &errOut); code == exitOK {
+		t.Error("second --init should refuse to overwrite an existing config")
+	}
+}
+
 func TestRunInvalidRepoArg(t *testing.T) {
 	cfg := writeConfig(t, `["github.com/td72"]
 credentials = "op://Personal/x"

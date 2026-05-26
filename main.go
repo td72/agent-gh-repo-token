@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"flag"
 	"fmt"
@@ -15,6 +16,11 @@ import (
 
 // version is overridden at build time via -ldflags "-X main.version=...".
 var version = "dev"
+
+// exampleConfig is the starter repos.toml written by --init.
+//
+//go:embed examples/repos.toml
+var exampleConfig string
 
 // Exit codes — see the "終了コードの設計" table in README.md.
 const (
@@ -42,9 +48,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	repoArg := fs.String("repo", "", "target repository as [<host>/]<owner>/<repo> (host defaults to github.com)")
 	configPath := fs.String("config", "", "path to repos.toml (default: ~/.config/agent-gh-repo-token/repos.toml)")
+	doInit := fs.Bool("init", false, "write a starter repos.toml to the config path and exit")
 	showVersion := fs.Bool("version", false, "print version and exit")
 	fs.Usage = func() {
-		fmt.Fprintln(stderr, "usage: agent-gh-repo-token --repo [<host>/]<owner>/<repo> [--config path]")
+		fmt.Fprintln(stderr, "usage:")
+		fmt.Fprintln(stderr, "  agent-gh-repo-token --repo [<host>/]<owner>/<repo> [--config path]")
+		fmt.Fprintln(stderr, "  agent-gh-repo-token --init [--config path]")
 		fmt.Fprintln(stderr)
 		fs.PrintDefaults()
 	}
@@ -58,16 +67,21 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stdout, version)
 		return exitOK
 	}
+
+	path := *configPath
+	if path == "" {
+		path = defaultConfigPath()
+	}
+
+	if *doInit {
+		return runInit(path, stderr)
+	}
 	if *repoArg == "" {
 		fmt.Fprintln(stderr, "error: --repo is required")
 		fs.Usage()
 		return exitUsage
 	}
 
-	path := *configPath
-	if path == "" {
-		path = defaultConfigPath()
-	}
 	switch st, statErr := os.Stat(path); {
 	case statErr == nil && st.IsDir():
 		fmt.Fprintf(stderr, "config path is a directory: %s\n", path)
@@ -144,6 +158,26 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	fmt.Fprintln(stdout, token)
+	return exitOK
+}
+
+// runInit writes the bundled example repos.toml to path without overwriting an
+// existing file, to bootstrap a new config.
+func runInit(path string, stderr io.Writer) int {
+	if _, err := os.Stat(path); err == nil {
+		fmt.Fprintf(stderr, "config already exists, not overwriting: %s\n", path)
+		return exitUsage
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		fmt.Fprintf(stderr, "failed to create config directory: %v\n", err)
+		return exitNoConfig
+	}
+	if err := os.WriteFile(path, []byte(exampleConfig), 0o600); err != nil {
+		fmt.Fprintf(stderr, "failed to write config: %v\n", err)
+		return exitNoConfig
+	}
+	fmt.Fprintf(stderr, "wrote starter config: %s\n", path)
+	fmt.Fprintln(stderr, "edit it (credentials / vault / permissions) before use")
 	return exitOK
 }
 
