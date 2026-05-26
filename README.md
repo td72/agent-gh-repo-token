@@ -143,6 +143,9 @@ op item create \
 
 ### 4. `~/.config/agent-gh-repo-token/repos.toml` を書く
 
+雛形は `agent-gh-repo-token --init` で default パス (または `--config` 指定先) に
+書き出せます (既存ファイルは上書きしません)。書き出した後に内容を編集します:
+
 ```toml
 # org / user 単位のデフォルト
 ["github.com/td72"]
@@ -180,6 +183,9 @@ agent-gh-repo-token --repo ghe.corp/team/foo
 
 # 別 config を使う
 agent-gh-repo-token --repo td72/foo --config /path/to/repos.toml
+
+# config 雛形を書き出す (既存は上書きしない)
+agent-gh-repo-token --init
 ```
 
 `--repo` は `gh` CLI と同じ `[<host>/]<owner>/<repo>` 形式。host を省略すると
