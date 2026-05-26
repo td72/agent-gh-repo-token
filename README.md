@@ -177,6 +177,9 @@ read-only 用途なら `contents` に加え `pull_requests` / `issues` / `action
 agent-gh-repo-token --repo td72/foo
 # → ghs_xxxx... (stdout に token のみ)
 
+# git repo 内なら --repo を省略でき、origin リモートから自動検出する
+agent-gh-repo-token
+
 # host は省略すると github.com。GHES なら明示する
 agent-gh-repo-token --repo github.com/td72/foo
 agent-gh-repo-token --repo ghe.corp/team/foo
@@ -189,7 +192,9 @@ agent-gh-repo-token --init
 ```
 
 `--repo` は `gh` CLI と同じ `[<host>/]<owner>/<repo>` 形式。host を省略すると
-`github.com` を補完します。
+`github.com` を補完します。`--repo` 自体を省略すると、カレントディレクトリの
+git `origin` リモートから検出します (検出した repo は stderr に表示。token は
+stdout のみ)。git repo でない / origin が無い場合は usage エラー (exit 1)。
 
 ### 終了コードの設計
 
@@ -242,19 +247,19 @@ permissions     = { contents = "write" }
 ### bash で sandbox 環境変数 / secret として渡す
 
 ```bash
-# origin リモートから owner/repo を取り出す (host は --repo 側で github.com 補完)
-repo=$(git remote get-url origin | sed -E 's#.*github.com[:/]([^/]+/[^/.]+).*#\1#')
-
-if token=$(agent-gh-repo-token --repo "$repo" 2>/dev/null); then
+# repo の checkout 内で実行すれば origin から repo を自動検出する
+if token=$(agent-gh-repo-token 2>/dev/null); then
   # Docker Sandboxes に secret として渡す
   echo "$token" | sbx secret set "$sandbox_name" github
 fi
 ```
 
+別ディレクトリから実行する場合は `--repo td72/foo` で明示します。
+
 ### Docker run の env として渡す
 
 ```bash
-token=$(agent-gh-repo-token --repo "$repo")
+token=$(agent-gh-repo-token --repo td72/foo)
 docker run --rm -e GH_TOKEN="$token" my-coding-agent-image
 ```
 

@@ -71,6 +71,61 @@ permissions = { contents = "write", pull_requests = "write" }
 	}
 }
 
+func TestRunRepoFromGit(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+	cfg := writeConfig(t, `["github.com/td72"]
+credentials = "op://Personal/agent-gh-repo-token"
+permissions = { contents = "write" }
+`)
+
+	origGit, origFetch, origMint := gitOriginURL, fetchOpItem, mintToken
+	defer func() { gitOriginURL, fetchOpItem, mintToken = origGit, origFetch, origMint }()
+
+	gitOriginURL = func() (string, error) { return "git@github.com:td72/foo.git", nil }
+	fetchOpItem = func(string) (map[string]string, error) {
+		return map[string]string{"app_id": "1", "installation_id": "2", "private_key": string(keyPEM)}, nil
+	}
+	var gotRepo string
+	mintToken = func(_ context.Context, _, _, _, repo string, _ map[string]string) (string, error) {
+		gotRepo = repo
+		return "ghs_x", nil
+	}
+
+	var out, errOut bytes.Buffer
+	code := run([]string{"--config", cfg}, &out, &errOut) // no --repo
+	if code != exitOK {
+		t.Fatalf("exit = %d, stderr=%s", code, errOut.String())
+	}
+	if gotRepo != "foo" {
+		t.Errorf("repo = %q, want foo (derived from git origin)", gotRepo)
+	}
+	if !strings.Contains(errOut.String(), "from git origin") {
+		t.Errorf("expected a stderr notice about git origin, got %q", errOut.String())
+	}
+}
+
+func TestRunRepoFromGitUnavailable(t *testing.T) {
+	cfg := writeConfig(t, `["github.com/td72"]
+credentials = "op://Personal/x"
+`)
+	orig := gitOriginURL
+	defer func() { gitOriginURL = orig }()
+	gitOriginURL = func() (string, error) { return "", errors.New("not a git repository") }
+
+	var out, errOut bytes.Buffer
+	code := run([]string{"--config", cfg}, &out, &errOut)
+	if code != exitUsage {
+		t.Errorf("exit = %d, want %d (usage)", code, exitUsage)
+	}
+}
+
 func TestRunInit(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "sub", "repos.toml")
 	var out, errOut bytes.Buffer
