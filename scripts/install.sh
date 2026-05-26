@@ -44,6 +44,10 @@ echo "downloading $url" >&2
 curl -fsSL -o "$tmp" "$url"
 chmod +x "$tmp"
 
+if [ ! -d "$PREFIX" ]; then
+  echo "creating $PREFIX" >&2
+  mkdir -p "$PREFIX" 2>/dev/null || sudo mkdir -p "$PREFIX"
+fi
 if [ -w "$PREFIX" ]; then
   mv "$tmp" "$PREFIX/$BIN"
 else
