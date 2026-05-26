@@ -21,7 +21,13 @@ case "$arch" in
   *) echo "unsupported arch: $arch" >&2; exit 1 ;;
 esac
 case "$os" in
-  linux | darwin) ;;
+  linux) ;;
+  darwin)
+    if [ "$arch" = "amd64" ]; then
+      echo "Intel macOS (darwin/amd64) is not supported; use Apple Silicon or build from source (go install)." >&2
+      exit 1
+    fi
+    ;;
   *) echo "unsupported os: $os" >&2; exit 1 ;;
 esac
 
