@@ -38,9 +38,12 @@ Coding Agent (Claude Code, Cursor, Aider 等) に GitHub アクセスを与え�
 単一バイナリを GitHub Releases から取得します (ランタイム依存なし)。
 
 ```bash
-# install スクリプト (OS/arch を自動判定して /usr/local/bin に配置)
+# install スクリプト (OS/arch 自動判定 → checksums.txt で sha256 検証 → /usr/local/bin)
 curl -fsSL https://raw.githubusercontent.com/td72/agent-gh-repo-token/main/scripts/install.sh | sh
 ```
+
+`VERSION` / `PREFIX` / `VERIFY`(=0 で検証スキップ) を環境変数で指定できます
+(Intel macOS は配布対象外。`go install` でビルドしてください)。
 
 手動で落とす場合は対象 asset を直接ダウンロード:
 

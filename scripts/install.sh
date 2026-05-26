@@ -6,6 +6,7 @@
 # Env overrides:
 #   VERSION  release tag to install (default: latest)
 #   PREFIX   install directory      (default: /usr/local/bin)
+#   VERIFY   set to 0 to skip sha256 checksum verification (default: 1)
 set -eu
 
 REPO="td72/agent-gh-repo-token"
@@ -42,6 +43,31 @@ tmp="$(mktemp "${TMPDIR:-/tmp}/${BIN}.XXXXXX")"
 trap 'rm -f "$tmp"' EXIT
 echo "downloading $url" >&2
 curl -fsSL -o "$tmp" "$url"
+
+if [ "${VERIFY:-1}" != "0" ]; then
+  echo "verifying checksum" >&2
+  sums="$(mktemp "${TMPDIR:-/tmp}/${BIN}-sums.XXXXXX")"
+  trap 'rm -f "$tmp" "$sums"' EXIT
+  curl -fsSL -o "$sums" "${url%/*}/checksums.txt"
+  expected="$(awk -v f="$asset" '$2 == f || $2 == "*"f {print $1}' "$sums")"
+  if [ -z "$expected" ]; then
+    echo "checksum for $asset not found in checksums.txt (set VERIFY=0 to skip)" >&2
+    exit 1
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    actual="$(sha256sum "$tmp" | awk '{print $1}')"
+  elif command -v shasum >/dev/null 2>&1; then
+    actual="$(shasum -a 256 "$tmp" | awk '{print $1}')"
+  else
+    echo "no sha256 tool (sha256sum/shasum) found; set VERIFY=0 to skip" >&2
+    exit 1
+  fi
+  if [ "$expected" != "$actual" ]; then
+    echo "checksum mismatch for $asset (expected $expected, got $actual)" >&2
+    exit 1
+  fi
+fi
+
 chmod +x "$tmp"
 
 if [ ! -d "$PREFIX" ]; then
