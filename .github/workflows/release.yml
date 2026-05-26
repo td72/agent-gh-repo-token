@@ -1,0 +1,27 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # needed for `git describe` in the dist task
+      - uses: jdx/mise-action@v4
+      - run: mise run test
+      - name: Build release binaries
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: mise run dist
+      - name: Publish release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/*
+          generate_release_notes: true

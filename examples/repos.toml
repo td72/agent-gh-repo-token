@@ -1,0 +1,44 @@
+# Copy this file to ~/.config/agent-gh-repo-token/repos.toml.
+#
+# When `agent-gh-repo-token --repo [<host>/]<owner>/<repo>` is invoked, it:
+#   1. Looks up the matching entry — repo-level wins, org/user-level is the
+#      fallback (shallow-merged per top-level key)
+#   2. Fetches the referenced 1Password item to get the App's
+#      app_id / installation_id / private_key
+#   3. Generates a JWT and mints an installation token, scoped to:
+#        - repositories: [<current-repo-name>]
+#        - permissions:  <permissions block below>
+#   4. Prints the token (and only the token) to stdout. Expires in 1 hour.
+#
+# Prerequisites:
+#   - `op` (1Password CLI) authenticated to the vault(s) referenced below
+#   - A GitHub App with private key + App ID + installation_id stored in a
+#     secret store, referenced by the `credentials` URI below (the scheme
+#     selects the backend; currently op:// for 1Password). The item must have
+#     fields named: app_id, installation_id, private_key
+#
+# Key format: "<host>/<owner>" for org/user-level, add "/<repo>" for repo-level.
+#
+# permissions (a whitelist):
+#   - Omitted  -> the token carries ALL of the App's granted permissions.
+#   - Present  -> narrowed to exactly what you list; anything not listed is
+#                 dropped even if the App has it. You can only list permissions
+#                 the App was granted (requesting more is rejected when minting).
+#   - Merge is per top-level key: a repo-level block WITHOUT `permissions`
+#     inherits the owner-level value; WITH it, it fully replaces (no deep merge).
+#   - To give one repo the App's full permissions, override with an empty table:
+#         permissions = {}
+#   Handy read-only scopes for a coding agent, beyond `contents`:
+#     pull_requests, issues, actions, checks, statuses, security_events ("read")
+
+# ─── org/user-level defaults (most repos in this owner reuse these) ───
+# Vault name depends on your 1Password plan: "Personal" on individual
+# (Individual/Families) accounts, "Employee" on 1Password Business. Use yours.
+["github.com/td72"]
+credentials = "op://Personal/agent-gh-repo-token"
+permissions = { contents = "write", pull_requests = "write" }
+
+# ─── repo-level overrides (only write keys that differ from the owner entry) ───
+# Example: a read-only worker (analyzer / reviewer) for a sensitive repo.
+["github.com/td72/secret-stuff"]
+permissions = { contents = "read", pull_requests = "read", issues = "read" }
