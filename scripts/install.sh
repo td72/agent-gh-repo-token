@@ -38,7 +38,7 @@ else
   url="https://github.com/${REPO}/releases/download/${VERSION}/${asset}"
 fi
 
-tmp="$(mktemp)"
+tmp="$(mktemp "${TMPDIR:-/tmp}/${BIN}.XXXXXX")"
 trap 'rm -f "$tmp"' EXIT
 echo "downloading $url" >&2
 curl -fsSL -o "$tmp" "$url"
